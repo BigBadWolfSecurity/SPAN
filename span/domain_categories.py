@@ -25,16 +25,18 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
+from typing import List, Set, Union
+from regex import compile
 class DomainCategories:
-    def __init__(self, custom_domains):
+    def __init__(self, policy, custom_domains):
+        self.p = policy
         self.uncat_domains = set(str(x) for x in custom_domains)
         self.all_domains = self.uncat_domains
         self.domain_categories = {}
         
     def add(self, cat_name: str, cat: set, strict=True):
         for t in cat:
-            p.lookup_type(t)
+            self.p.lookup_type(t)
             if strict and t not in self.uncat_domains:
                 raise Exception(t + " not in uncat domains")
             
