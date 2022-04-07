@@ -26,7 +26,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from typing import List, Set, Union
-from regex import compile
+from re import compile
 class DomainCategories:
     def __init__(self, policy, custom_domains):
         self.p = policy
