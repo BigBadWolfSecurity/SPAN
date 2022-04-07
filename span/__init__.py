@@ -26,5 +26,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from .span import *
+from .domain_categories import DomainCategories
 from .indexed_terulequery import *
 from .domain_summary_to_word import *

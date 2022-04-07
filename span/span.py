@@ -32,6 +32,7 @@
 import configparser
 import os.path
 import re
+from fnmatch import fnmatchcase
 
 import pandas as pd
 import setools as se
@@ -44,7 +45,9 @@ from . import indexed_terulequery
 pd.options.display.max_rows = 2000
 pd.set_option('max_colwidth', 2000)
 
-
+def pp(data):
+    display(pd.DataFrame(data))
+    
 def dataframe_hide_none(val):
     if val is None or (isinstance(val, set) and len(val) == 0):
         return "color: white"
@@ -205,6 +208,58 @@ class Policy(se.SELinuxPolicy):
                                     "smbd_t", "mount_t", "files_unconfined_type", "xauth_t", "hostname_t",
                                     "readahead_t", "rpm_t", "nmbd_t", "init_t", "initrc_t", "insmod_t", "mdadm_t",
                                     "devices_unconfined_type", "udev_t", "bootloader_t", "system_cronjob_t"]
+
+    dirfile_read = {
+        "dir": "r",
+        "file": "r",
+        "lnk_file": "r"
+    }
+
+    dirfile_write = {
+        "dir": "w",
+        "file": "w",
+        "lnk_file": "w"
+    }
+
+    dirfile_rw = {
+        "dir": "rw",
+        "file": "rw",
+        "lnk_file": "rw"
+    }
+
+    example_ignore = [
+        {
+            "target": "etc_t",
+            "access": dirfile_read
+        },
+        {
+            "target": ["null_device_t", "zero_device_t"]
+        },
+        {
+            "target": "bin_t",
+            "access": dirfile_read
+        },
+        {
+            "access": {"process": {"sigchld"}}
+        },
+        {
+            "target": ["ld_so_t", "lib_t", "textrel_shlib_t", "ld_so_cache_t"],
+            "access": dirfile_read
+        },
+        {
+            "target": "usr_t",
+            "access": dirfile_read
+        },
+        {
+            "target": "proc_t",
+            "access": dirfile_read
+        },
+        {
+            "target": "var_run_t",
+            "access": dirfile_read
+        }
+    ]
+
     trusted_domain_types = []
 
     domain_attribute = "domain"
@@ -241,7 +296,7 @@ class Policy(se.SELinuxPolicy):
     AVRULE_XPERMS_RULE_ATTRS = ["perms", "xperm_type"]
     TYPE_RULE_ATTRS = ["default", "filename"]
 
-    def terules_query(self, **kwargs):
+    def terules_query_simple(self, **kwargs):
         r = self.terules_query_raw(**kwargs)
 
         data = []
@@ -274,6 +329,75 @@ class Policy(se.SELinuxPolicy):
         df.style.applymap(dataframe_hide_none)
 
         return df
+
+    def __ignore_types(self, ignore, rule):
+        predicates = []
+        keys = ["source", "target"]
+        for key in keys:
+            if not key in ignore:
+                continue
+            val = str(rule[key])
+            ignore_vals = ignore[key]
+            if isinstance(ignore_vals, str):
+                ignore_vals = [ignore_vals]
+            matched = False
+            for ignore_val in ignore_vals:
+                if fnmatchcase(val, ignore_val):
+                    matched = True
+                    break
+            predicates.append(matched)
+
+        if len(predicates) == 0:
+            return None
+        else:
+            return all(predicates)
+
+    def __ignore_access(self, ignore, rule, info_flow_weight, perms_cache):
+        if not "access" in ignore:
+            return None
+
+        tclasses = ignore["access"]
+        tclass = rule["tclass"]
+        if not tclass in tclasses:
+            return False        
+
+        dir = tclasses[tclass]
+        if dir in ["r", "w", "rw"]:
+            # ok - we just add none, because otherwise things like open never appear
+            dir = dir + "n"
+            cachekey = f"{tclass}-{dir}"
+            if cachekey not in perms_cache:
+                perms = set()
+                for d in dir:
+                    perms = perms.union(set(self.info_flow_perms([tclass], d, info_flow_weight)))
+                perms_cache[cachekey] = perms
+            perms = perms_cache[cachekey]
+        else:
+            perms = dir
+
+        if len(rule["perms"].difference(perms)) > 0:
+            return False
+
+        return True
+
+
+    def terules_query(self, ignore=[], info_flow_weight_for_access_filter=1, **args):
+        r = self.terules_query_simple(**args)
+        perms_cache = {}
+        out = []
+        for _, row in r.iterrows():
+            ignore_row = False
+            for ig in ignore:
+                predicates = []
+                predicates.append(self.__ignore_types(ig, row))
+                predicates.append(self.__ignore_access(ig, row, info_flow_weight_for_access_filter, perms_cache))
+                ignore_row = all(x for x in predicates if x is not None)
+                if ignore_row:
+                    break
+            if not ignore_row:
+                out.append(row)
+
+        return pd.DataFrame(out)
 
     def constraint_query(self, **kwargs):
         if "ruletype" not in kwargs:
