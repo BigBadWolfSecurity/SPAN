@@ -572,8 +572,9 @@ class Policy(se.SELinuxPolicy):
     def info_flow_perms(self, tclass=["file"], direction=DIR_WRITE, min_weight=7):
         perms = set()
         for c in tclass:
+            pc = self.lookup_class(c)
             perms.update([x.perm for x in permmap.perms(c) if
-                          (x.direction == direction or x.direction == "b") and x.weight >= min_weight])
+                          x.perm in pc.perms and (x.direction == direction or x.direction == "b") and x.weight >= min_weight])
 
         return list(perms)
 
