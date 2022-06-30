@@ -190,6 +190,9 @@ class Type(Delegator):
         attributes = self.child.attributes()
         return [TypeAttribute(x) for x in attributes]
 
+    def __eq__(self, __o: object) -> bool:
+        return self.child.__eq__(__o)
+
 class TypeAttribute(Delegator):
     def __repr__(self) -> str:
         return self.name
