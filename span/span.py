@@ -577,7 +577,7 @@ class Policy(se.SELinuxPolicy):
         for c in tclass:
             pc = self.lookup_class(c)
             perms.update([x.perm for x in permmap.perms(c) if
-                          x.perm in pc.perms and (x.direction == direction or x.direction == "b") and x.weight >= min_weight])
+                          (x.perm in pc.perms or x.perm in pc.common) and (x.direction == direction or x.direction == "b") and x.weight >= min_weight])
 
         return list(perms)
 
