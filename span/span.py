@@ -467,7 +467,7 @@ class Policy(se.SELinuxPolicy):
         return sorted(q.results())
 
     def attributes_for_type(self, tname):
-        attrs = sorted(self.lookup_type(tname).attributes())
+        attrs = list(self.lookup_type(tname).attributes())
         return attrs
 
     def types_in_attribute(self, attr):
