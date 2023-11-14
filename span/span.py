@@ -39,15 +39,18 @@ import setools as se
 from IPython.display import display, Markdown
 from setools.policyrep import Type as PolicyRepType
 from setools.policyrep import TypeAttribute as PolicyRepTypeAttribute
+from setools.diff import PolicyDifference
 
 from . import indexed_terulequery
 
 pd.options.display.max_rows = 2000
-pd.set_option('max_colwidth', 2000)
+pd.set_option("max_colwidth", 2000)
+
 
 def pp(data):
     display(pd.DataFrame(data))
-    
+
+
 def dataframe_hide_none(val):
     if val is None or (isinstance(val, set) and len(val) == 0):
         return "color: white"
@@ -63,7 +66,139 @@ file_r_perms = [x.perm for x in permmap.perms("file") if x.direction == "r"]
 file_classes = ["file", "blk_file", "chr_file", "lnk_file"]
 file_dir_classes = file_classes + ["dir"]
 
-all_object_classes = ['bluetooth_socket', 'netlink_audit_socket', 'tcp_socket', 'msgq', 'rose_socket', 'x_property', 'binder', 'db_procedure', 'dir', 'peer', 'tipc_socket', 'blk_file', 'chr_file', 'db_table', 'db_tuple', 'dbus', 'ipc', 'ipx_socket', 'lnk_file', 'netlink_connector_socket', 'process', 'atmsvc_socket', 'capability2', 'fd', 'nfc_socket', 'packet', 'socket', 'bridge_socket', 'cap_userns', 'fifo_file', 'file', 'node', 'process2', 'x_cursor', 'x_server', 'bpf', 'decnet_socket', 'irda_socket', 'phonet_socket', 'db_view', 'netlink_nflog_socket', 'rds_socket', 'sctp_socket', 'xdp_socket', 'key', 'netlink_netfilter_socket', 'ib_socket', 'netlink_iscsi_socket', 'netlink_tcpdiag_socket', 'unix_stream_socket', 'x_synthetic_event', 'db_database', 'db_language', 'kernel_service', 'netlink_route_socket', 'pppox_socket', 'x_extension', 'db_sequence', 'ieee802154_socket', 'infiniband_endport', 'netlink_rdma_socket', 'netrom_socket', 'shm', 'x_resource', 'llc_socket', 'netlink_selinux_socket', 'capability', 'mpls_socket', 'netlink_ip6fw_socket', 'cap2_userns', 'dccp_socket', 'iucv_socket', 'netlink_firewall_socket', 'sock_file', 'unix_dgram_socket', 'kcm_socket', 'netlink_kobject_uevent_socket', 'vsock_socket', 'db_blob', 'filesystem', 'netlink_xfrm_socket', 'rxrpc_socket', 'x_device', 'can_socket', 'db_schema', 'netlink_dnrt_socket', 'netlink_generic_socket', 'x_client', 'x_gc', 'atmpvc_socket', 'context', 'nscd', 'passwd', 'x_event', 'x_font', 'ax25_socket', 'netlink_scsitransport_socket', 'service', 'x25_socket', 'isdn_socket', 'key_socket', 'netif', 'packet_socket', 'memprotect', 'msg', 'qipcrtr_socket', 'tun_socket', 'udp_socket', 'appletalk_socket', 'netlink_crypto_socket', 'proxy', 'x_colormap', 'x_screen', 'rawip_socket', 'x_application_data', 'association', 'caif_socket', 'x_selection', 'db_column', 'netlink_socket', 'x_drawable', 'infiniband_pkey', 'sem', 'system', 'x_keyboard', 'alg_socket', 'icmp_socket', 'netlink_fib_lookup_socket', 'security', 'smc_socket', 'x_pointer']
+all_object_classes = [
+    "bluetooth_socket",
+    "netlink_audit_socket",
+    "tcp_socket",
+    "msgq",
+    "rose_socket",
+    "x_property",
+    "binder",
+    "db_procedure",
+    "dir",
+    "peer",
+    "tipc_socket",
+    "blk_file",
+    "chr_file",
+    "db_table",
+    "db_tuple",
+    "dbus",
+    "ipc",
+    "ipx_socket",
+    "lnk_file",
+    "netlink_connector_socket",
+    "process",
+    "atmsvc_socket",
+    "capability2",
+    "fd",
+    "nfc_socket",
+    "packet",
+    "socket",
+    "bridge_socket",
+    "cap_userns",
+    "fifo_file",
+    "file",
+    "node",
+    "process2",
+    "x_cursor",
+    "x_server",
+    "bpf",
+    "decnet_socket",
+    "irda_socket",
+    "phonet_socket",
+    "db_view",
+    "netlink_nflog_socket",
+    "rds_socket",
+    "sctp_socket",
+    "xdp_socket",
+    "key",
+    "netlink_netfilter_socket",
+    "ib_socket",
+    "netlink_iscsi_socket",
+    "netlink_tcpdiag_socket",
+    "unix_stream_socket",
+    "x_synthetic_event",
+    "db_database",
+    "db_language",
+    "kernel_service",
+    "netlink_route_socket",
+    "pppox_socket",
+    "x_extension",
+    "db_sequence",
+    "ieee802154_socket",
+    "infiniband_endport",
+    "netlink_rdma_socket",
+    "netrom_socket",
+    "shm",
+    "x_resource",
+    "llc_socket",
+    "netlink_selinux_socket",
+    "capability",
+    "mpls_socket",
+    "netlink_ip6fw_socket",
+    "cap2_userns",
+    "dccp_socket",
+    "iucv_socket",
+    "netlink_firewall_socket",
+    "sock_file",
+    "unix_dgram_socket",
+    "kcm_socket",
+    "netlink_kobject_uevent_socket",
+    "vsock_socket",
+    "db_blob",
+    "filesystem",
+    "netlink_xfrm_socket",
+    "rxrpc_socket",
+    "x_device",
+    "can_socket",
+    "db_schema",
+    "netlink_dnrt_socket",
+    "netlink_generic_socket",
+    "x_client",
+    "x_gc",
+    "atmpvc_socket",
+    "context",
+    "nscd",
+    "passwd",
+    "x_event",
+    "x_font",
+    "ax25_socket",
+    "netlink_scsitransport_socket",
+    "service",
+    "x25_socket",
+    "isdn_socket",
+    "key_socket",
+    "netif",
+    "packet_socket",
+    "memprotect",
+    "msg",
+    "qipcrtr_socket",
+    "tun_socket",
+    "udp_socket",
+    "appletalk_socket",
+    "netlink_crypto_socket",
+    "proxy",
+    "x_colormap",
+    "x_screen",
+    "rawip_socket",
+    "x_application_data",
+    "association",
+    "caif_socket",
+    "x_selection",
+    "db_column",
+    "netlink_socket",
+    "x_drawable",
+    "infiniband_pkey",
+    "sem",
+    "system",
+    "x_keyboard",
+    "alg_socket",
+    "icmp_socket",
+    "netlink_fib_lookup_socket",
+    "security",
+    "smc_socket",
+    "x_pointer",
+]
 
 
 def load_policy(fname):
@@ -159,7 +294,7 @@ def collect_types(p, raw, expand_attrs=True):
 
     data = []
     for k in sorted(u.keys()):
-        v = u[k]        
+        v = u[k]
         data.append({"Type": Type(k), "Conditional": None, "Permissions": sorted(v)})
 
     for k in sorted(c.keys()):
@@ -168,9 +303,10 @@ def collect_types(p, raw, expand_attrs=True):
         data.append({"Type": Type(t), "Conditional": cond, "Permissions": sorted(v)})
 
     df = pd.DataFrame(data)[["Type", "Conditional", "Permissions"]]
-    df.style.applymap(dataframe_hide_none)
+    df.style.map(dataframe_hide_none)
 
     return df
+
 
 class Delegator:
     def __init__(self, child) -> None:
@@ -178,24 +314,44 @@ class Delegator:
             child = child.child
         self.child = child
 
+    def __str__(self) -> str:
+        return self.child.name
+
     def __getattr__(self, name: str):
         return getattr(self.child, name)
 
 
 class Type(Delegator):
-    def __repr__(self) -> str:
-        return self.name
-
     def attributes(self):
         attributes = self.child.attributes()
         return [TypeAttribute(x) for x in attributes]
 
+    def __key(self):
+        return self.child.name
+
+    def __hash__(self) -> int:
+        return hash(self.__key())
+
     def __eq__(self, __o: object) -> bool:
         return self.child.__eq__(__o)
 
+    def __lt__(self, other):
+        return self.child.__lt__(other)
+
+
 class TypeAttribute(Delegator):
-    def __repr__(self) -> str:
-        return self.name
+    def __key(self):
+        return self.child.name
+
+    def __hash__(self) -> int:
+        return hash(self.__key())
+
+    def __eq__(self, __o: object) -> bool:
+        return self.child.__eq__(__o)
+
+    def __lt__(self, other):
+        return self.child.__lt__(other)
+
 
 def wrap(instance):
     if isinstance(instance, PolicyRepType):
@@ -205,62 +361,51 @@ def wrap(instance):
     else:
         return instance
 
+
 class Policy(se.SELinuxPolicy):
     # common trusted domain types we can filter out to remove noise
-    example_trusted_domain_types = ["kernel_t", "rpm_script_t", "setfiles_t", "setfiles_mac_t", "restorecond_t",
-                                    "smbd_t", "mount_t", "files_unconfined_type", "xauth_t", "hostname_t",
-                                    "readahead_t", "rpm_t", "nmbd_t", "init_t", "initrc_t", "insmod_t", "mdadm_t",
-                                    "devices_unconfined_type", "udev_t", "bootloader_t", "system_cronjob_t"]
+    example_trusted_domain_types = [
+        "kernel_t",
+        "rpm_script_t",
+        "setfiles_t",
+        "setfiles_mac_t",
+        "restorecond_t",
+        "smbd_t",
+        "mount_t",
+        "files_unconfined_type",
+        "xauth_t",
+        "hostname_t",
+        "readahead_t",
+        "rpm_t",
+        "nmbd_t",
+        "init_t",
+        "initrc_t",
+        "insmod_t",
+        "mdadm_t",
+        "devices_unconfined_type",
+        "udev_t",
+        "bootloader_t",
+        "system_cronjob_t",
+    ]
 
-    dirfile_read = {
-        "dir": "r",
-        "file": "r",
-        "lnk_file": "r"
-    }
+    dirfile_read = {"dir": "r", "file": "r", "lnk_file": "r"}
 
-    dirfile_write = {
-        "dir": "w",
-        "file": "w",
-        "lnk_file": "w"
-    }
+    dirfile_write = {"dir": "w", "file": "w", "lnk_file": "w"}
 
-    dirfile_rw = {
-        "dir": "rw",
-        "file": "rw",
-        "lnk_file": "rw"
-    }
+    dirfile_rw = {"dir": "rw", "file": "rw", "lnk_file": "rw"}
 
     example_ignore = [
-        {
-            "target": "etc_t",
-            "access": dirfile_read
-        },
-        {
-            "target": ["null_device_t", "zero_device_t"]
-        },
-        {
-            "target": "bin_t",
-            "access": dirfile_read
-        },
-        {
-            "access": {"process": {"sigchld"}}
-        },
+        {"target": "etc_t", "access": dirfile_read},
+        {"target": ["null_device_t", "zero_device_t"]},
+        {"target": "bin_t", "access": dirfile_read},
+        {"access": {"process": {"sigchld"}}},
         {
             "target": ["ld_so_t", "lib_t", "textrel_shlib_t", "ld_so_cache_t"],
-            "access": dirfile_read
+            "access": dirfile_read,
         },
-        {
-            "target": "usr_t",
-            "access": dirfile_read
-        },
-        {
-            "target": "proc_t",
-            "access": dirfile_read
-        },
-        {
-            "target": "var_run_t",
-            "access": dirfile_read
-        }
+        {"target": "usr_t", "access": dirfile_read},
+        {"target": "proc_t", "access": dirfile_read},
+        {"target": "var_run_t", "access": dirfile_read},
     ]
 
     trusted_domain_types = []
@@ -271,7 +416,9 @@ class Policy(se.SELinuxPolicy):
         if "ruletype" not in kwargs:
             kwargs["ruletype"] = [se.TERuletype.allow]
         results = se.TERuleQuery(self, **kwargs).results()
-        filtered_results = [x for x in results if x.source not in self.trusted_domain_types]
+        filtered_results = [
+            x for x in results if x.source not in self.trusted_domain_types
+        ]
         return sorted(filtered_results)
 
     def terules_query_raw(self, **kwargs):
@@ -299,39 +446,51 @@ class Policy(se.SELinuxPolicy):
     AVRULE_XPERMS_RULE_ATTRS = ["perms", "xperm_type"]
     TYPE_RULE_ATTRS = ["default", "filename"]
 
-    def terules_query_simple(self, **kwargs):
-        r = self.terules_query_raw(**kwargs)
+    def terule_to_dataframe(self, rule):
+        rt = se.TERuletype
+        if rule.ruletype in (rt.allow, rt.dontaudit, rt.neverallow, rt.dontaudit):
+            attrs = self.AVRULE_ATTRS
+        elif rule.ruletype in (
+            rt.allowxperm,
+            rt.neverallowxperm,
+            rt.auditallowxperm,
+            rt.dontauditxperm,
+        ):
+            attrs = self.AVRULE_XPERMS_RULE_ATTRS
+        else:
+            attrs = self.TYPE_RULE_ATTRS
 
+        row = {}
+        for attr in self.BASE_RULE_ATTRS + attrs:
+            try:
+                row[attr] = wrap(getattr(rule, attr))
+            except:
+                row[attr] = None
+                continue
+        row["cond"] = cond_expr(rule)
+
+        return row, attrs
+
+    def terules_to_dataframe(self, rules):
         data = []
         extra_indexes = set()
-        for rule in r:
-            rt = se.TERuletype
-            if rule.ruletype in (rt.allow, rt.dontaudit, rt.neverallow, rt.dontaudit):
-                attrs = self.AVRULE_ATTRS
-            elif rule.ruletype in (rt.allowxperm, rt.neverallowxperm, rt.auditallowxperm, rt.dontauditxperm):
-                attrs = self.AVRULE_XPERMS_RULE_ATTRS
-            else:
-                attrs = self.TYPE_RULE_ATTRS
-            extra_indexes.update(attrs)
-
-            row = {}
-            for attr in self.BASE_RULE_ATTRS + attrs:
-                try:
-                    row[attr] = wrap(getattr(rule, attr))
-                except:
-                    row[attr] = None
-                    continue
-            row["cond"] = cond_expr(rule)
-
+        for rule in rules:
+            row, attrs = self.terule_to_dataframe(rule)
             data.append(row)
+            extra_indexes.update(attrs)
 
         if not len(data):
             return None
 
         df = pd.DataFrame(data)[self.BASE_RULE_ATTRS + list(extra_indexes) + ["cond"]]
-        df.style.applymap(dataframe_hide_none)
+        df.style.map(dataframe_hide_none)
 
         return df
+
+    def terules_query_simple(self, **kwargs):
+        rules = self.terules_query_raw(**kwargs)
+
+        return self.terule_to_dataframe(rules)
 
     def __ignore_types(self, ignore, rule):
         predicates = []
@@ -362,7 +521,7 @@ class Policy(se.SELinuxPolicy):
         tclasses = ignore["access"]
         tclass = rule["tclass"]
         if not tclass in tclasses:
-            return False        
+            return False
 
         dir = tclasses[tclass]
         if dir in ["r", "w", "rw"]:
@@ -372,7 +531,9 @@ class Policy(se.SELinuxPolicy):
             if cachekey not in perms_cache:
                 perms = set()
                 for d in dir:
-                    perms = perms.union(set(self.info_flow_perms([tclass], d, info_flow_weight)))
+                    perms = perms.union(
+                        set(self.info_flow_perms([tclass], d, info_flow_weight))
+                    )
                 perms_cache[cachekey] = perms
             perms = perms_cache[cachekey]
         else:
@@ -383,7 +544,6 @@ class Policy(se.SELinuxPolicy):
 
         return True
 
-
     def terules_query(self, ignore=[], info_flow_weight_for_access_filter=1, **args):
         r = self.terules_query_simple(**args)
         perms_cache = {}
@@ -393,7 +553,11 @@ class Policy(se.SELinuxPolicy):
             for ig in ignore:
                 predicates = []
                 predicates.append(self.__ignore_types(ig, row))
-                predicates.append(self.__ignore_access(ig, row, info_flow_weight_for_access_filter, perms_cache))
+                predicates.append(
+                    self.__ignore_access(
+                        ig, row, info_flow_weight_for_access_filter, perms_cache
+                    )
+                )
                 ignore_row = all(x for x in predicates if x is not None)
                 if ignore_row:
                     break
@@ -402,11 +566,29 @@ class Policy(se.SELinuxPolicy):
 
         return pd.DataFrame(out)
 
+    CONSTRAINT_ATTRS = ["ruletype", "tclass", "perms", "expression"]
+
+    def constraints_to_dataframe(self, constraints):
+        rows = []
+        for c in constraints:
+            row = {}
+            for attr in self.CONSTRAINT_ATTRS:
+                row[attr] = wrap(getattr(c, attr))
+            rows.append(row)
+
+        if not len(rows):
+            return pd.DataFrame(columns=self.CONSTRAINT_ATTRS)
+
+        df = pd.DataFrame(rows)[self.CONSTRAINT_ATTRS]
+
+        return df
+
     def constraint_query(self, **kwargs):
         if "ruletype" not in kwargs:
             kwargs["ruletype"] = ["mlsconstrain"]
         results = se.ConstraintQuery(self, **kwargs).results()
-        return sorted(results)
+
+        return self.constraints_to_dataframe(results)
 
     def transrules_query(self, **kwargs):
         if "ruletype" not in kwargs:
@@ -431,11 +613,16 @@ class Policy(se.SELinuxPolicy):
 
     def roletrans_query(self, **kwargs):
         if "ruletype" not in kwargs:
-            kwargs["ruletype"] = [se.RBACRuletype.role_transition, se.RBACRuletype.allow]
+            kwargs["ruletype"] = [
+                se.RBACRuletype.role_transition,
+                se.RBACRuletype.allow,
+            ]
         return sorted(se.RBACRuleQuery(self, **kwargs).results())
 
     def dta_analysis(self, domain, *args, **kwargs):
-        return list(se.DomainTransitionAnalysis(self, *args, **kwargs).transitions(domain))
+        return list(
+            se.DomainTransitionAnalysis(self, *args, **kwargs).transitions(domain)
+        )
 
     def types_re(self, s, **kwargs):
         q = se.TypeQuery(self, name_regex=True, **kwargs)
@@ -448,8 +635,8 @@ class Policy(se.SELinuxPolicy):
     def lookup_type_or_attrs(self, type_names):
         """
         Convert a list of type/attribute names into a list of types.
-        
-        :param type_names: An iterable of type names 
+
+        :param type_names: An iterable of type names
         :return: An list of Type and TypeAttribute objects
         """
 
@@ -477,7 +664,7 @@ class Policy(se.SELinuxPolicy):
         """
         Determine what types are new in this policy compared to another
         policy.
-        :param base_policy: The policy to compare with. 
+        :param base_policy: The policy to compare with.
         :return: Tuple contains (list of new types, list of new domains)
         """
         # We have to do this as strings because the hasing
@@ -501,22 +688,46 @@ class Policy(se.SELinuxPolicy):
                 out.add(t)
         return out
 
-    def domains_with(self, target_name, tclass=["file", "dir"], perms=file_w_perms, expand_attrs=False):
-        raw = [(x.source, cond_expr(x), x.perms) for x in
-               self.terules_query_raw(target=target_name, tclass=tclass, perms=perms, trusted_domain_types=[])]
+    def domains_with(
+        self,
+        target_name,
+        tclass=["file", "dir"],
+        perms=file_w_perms,
+        expand_attrs=False,
+    ):
+        raw = [
+            (x.source, cond_expr(x), x.perms)
+            for x in self.terules_query_raw(
+                target=target_name, tclass=tclass, perms=perms, trusted_domain_types=[]
+            )
+        ]
         return collect_types(self, raw, expand_attrs=expand_attrs)
 
     def domains_with_file_w_perms(self, target_name, expand_attrs=False):
-        return self.domains_with(self, target_name, tclass=["file", "dir"], perms=file_w_perms,
-                                 expand_attrs=expand_attrs)
+        return self.domains_with(
+            self,
+            target_name,
+            tclass=["file", "dir"],
+            perms=file_w_perms,
+            expand_attrs=expand_attrs,
+        )
 
     def domains_with_file_r_perms(self, target_name, expand_attrs=False):
-        return self.domains_with(self, target_name, tclass=["file", "dir"], perms=file_r_perms,
-                                 expand_attrs=expand_attrs)
+        return self.domains_with(
+            self,
+            target_name,
+            tclass=["file", "dir"],
+            perms=file_r_perms,
+            expand_attrs=expand_attrs,
+        )
 
     def domains_that_can_relabel(self, from_type, to_type, expand_attrs=False):
-        f = self.domains_with(from_type, tclass=None, perms=["relabelfrom"], expand_attrs=expand_attrs)
-        t = self.domains_with(to_type, tclass=None, perms=["relabelto"], expand_attrs=expand_attrs)
+        f = self.domains_with(
+            from_type, tclass=None, perms=["relabelfrom"], expand_attrs=expand_attrs
+        )
+        t = self.domains_with(
+            to_type, tclass=None, perms=["relabelto"], expand_attrs=expand_attrs
+        )
 
         def build_sets(result):
             unconditional = set()
@@ -537,7 +748,13 @@ class Policy(se.SELinuxPolicy):
         data = []
 
         def append_row(d, from_conditional=None, to_conditional=None):
-            data.append({"type": d, "from_conditional": from_conditional, "to_conditional": to_conditional})
+            data.append(
+                {
+                    "type": d,
+                    "from_conditional": from_conditional,
+                    "to_conditional": to_conditional,
+                }
+            )
 
         # For unconditional rules everything is easy - we just need to which types
         # are in both sets (meaning they both have relabel rules
@@ -565,7 +782,7 @@ class Policy(se.SELinuxPolicy):
                 append_row(d, to_conditional=t_c[d])
 
         df = pd.DataFrame(data)[["type", "from_conditional", "to_conditional"]]
-        df.style.applymap(dataframe_hide_none)
+        df.style.map(dataframe_hide_none)
 
         return df
 
@@ -586,50 +803,105 @@ class Policy(se.SELinuxPolicy):
                         class_perms.append(x)
                 except:
                     pass
-            perms.update([x.perm for x in class_perms if
-                          (x.direction == direction or x.direction == "b") and x.weight >= min_weight])
+            perms.update(
+                [
+                    x.perm
+                    for x in class_perms
+                    if (x.direction == direction or x.direction == "b")
+                    and x.weight >= min_weight
+                ]
+            )
 
         return list(perms)
 
-    def domain_info_flow(self, domain, tclass=file_classes, direction=DIR_WRITE, min_weight=10, expand_attrs=False):
+    def domain_info_flow(
+        self,
+        domain,
+        tclass=file_classes,
+        direction=DIR_WRITE,
+        min_weight=10,
+        expand_attrs=False,
+    ):
         """
         Return the set of object types that information can flow into or out of for a given domain.
-    
+
         domain - name of the domain type
         tclass - list of target class names
         direction - DIR_WRITE or DIR_READ
         """
         perms = self.info_flow_perms(tclass, direction, min_weight)
 
-        raw = [(x.target, cond_expr(x), as_strset(x.perms)) for x in
-               self.terules_query_raw(source=domain, tclass=tclass, perms=perms, trusted_domain_types=[])]
+        raw = [
+            (x.target, cond_expr(x), as_strset(x.perms))
+            for x in self.terules_query_raw(
+                source=domain, tclass=tclass, perms=perms, trusted_domain_types=[]
+            )
+        ]
 
         return collect_types(self, raw, expand_attrs)
 
-    def object_info_flow(self, object_type, tclass=file_classes, direction=DIR_WRITE, min_weight=10,
-                         expand_attrs=False):
+    def object_info_flow(
+        self,
+        object_type,
+        tclass=file_classes,
+        direction=DIR_WRITE,
+        min_weight=10,
+        expand_attrs=False,
+    ):
         """
         Return the set of domain types that information can flow into or out of for a given object.
-    
+
         object_type - name of the object type
         tclass - list of target class names
         direction - DIR_WRITE or DIR_READ
         """
         perms = self.info_flow_perms(tclass, direction, min_weight)
 
-        raw = [(x.source, cond_expr(x), as_strset(x.perms)) for x in
-               self.terules_query_raw(target=object_type, tclass=tclass, perms=perms, trusted_domain_types=[])]
+        raw = [
+            (x.source, cond_expr(x), as_strset(x.perms))
+            for x in self.terules_query_raw(
+                target=object_type, tclass=tclass, perms=perms, trusted_domain_types=[]
+            )
+        ]
 
         return collect_types(self, raw, expand_attrs)
 
     def policy_caps(self, **kwargs):
         return list(se.PolCapQuery(self, **kwargs).results())
 
+    DIFF_INDICATOR_COL_NAME = "+/-/*"
+
+    def __add_diff_indicator_column(self, df, indicator):
+        df["+/-/*"] = len(df) * [indicator]
+        return df[["+/-/*"] + df.columns.tolist()[:-1]]
+
+    def diff_terules(self, other):
+        policy_diff = PolicyDifference(self, other)
+
+        added = self.terules_to_dataframe(policy_diff.added_allows)
+        removed = self.terule_to_dataframe(policy_diff.removed_allows)
+        modified = 1
+
+    def diff_mls_constraints(self, other):
+        policy_diff = PolicyDifference(self, other)
+        
+        added = self.constraints_to_dataframe(policy_diff.added_mlsconstrains)
+        added = self.__add_diff_indicator_column(added, "+")
+        removed = self.constraints_to_dataframe(policy_diff.removed_mlsconstrains)
+        removed = self.__add_diff_indicator_column(removed, "-")
+
+        return pd.concat([added, removed])
+
+
+
+
     def types_summary(self, types):
         data = []
         for t in sorted(types):
             t = Type(t)
-            data.append({"name": str(t), "attributes": sorted([x.name for x in t.attributes()])})
+            data.append(
+                {"name": str(t), "attributes": sorted([x.name for x in t.attributes()])}
+            )
 
         df = pd.DataFrame(data)[["name", "attributes"]]
         df.style.applymap(dataframe_hide_none)
@@ -646,12 +918,28 @@ class Policy(se.SELinuxPolicy):
             "file_type": file_type,
             "attributes": markdown_list(self.attributes_for_type(file_type)),
             "other_trans": markdown_code_from_results(
-                self.transrules_query(target=file_type, target_indirect=False, tclass=obj_classes_except_process)),
+                self.transrules_query(
+                    target=file_type,
+                    target_indirect=False,
+                    tclass=obj_classes_except_process,
+                )
+            ),
             "fread": markdown_code_from_results(
-                self.terules_query_raw(target=file_type, tclass=file_dir_classes, perms=["read"], target_indirect=False)),
+                self.terules_query_raw(
+                    target=file_type,
+                    tclass=file_dir_classes,
+                    perms=["read"],
+                    target_indirect=False,
+                )
+            ),
             "fwrite": markdown_code_from_results(
-                self.terules_query_raw(target=file_type, tclass=file_dir_classes, perms=["write", "append"],
-                                       target_indirect=False)),
+                self.terules_query_raw(
+                    target=file_type,
+                    tclass=file_dir_classes,
+                    perms=["write", "append"],
+                    target_indirect=False,
+                )
+            ),
         }
 
         pp_markdown(file_summary_template.format(**data))
@@ -663,7 +951,10 @@ class Policy(se.SELinuxPolicy):
             "packet_type": packet_type,
             "attributes": markdown_list(self.attributes_for_type(packet_type)),
             "packet": markdown_code_from_results(
-                self.terules_query_raw(target=packet_type, tclass=["packet"], target_indirect=False)),
+                self.terules_query_raw(
+                    target=packet_type, tclass=["packet"], target_indirect=False
+                )
+            ),
         }
 
         pp_markdown(packet_summary_template.format(**data))
@@ -683,13 +974,28 @@ class Policy(se.SELinuxPolicy):
                 "file_type": attribute,
                 "types": markdown_list(self.types_in_attribute(attribute)),
                 "other_trans": markdown_code_from_results(
-                    self.transrules_query(target=attribute, target_indirect=False, tclass=obj_classes_except_process)),
+                    self.transrules_query(
+                        target=attribute,
+                        target_indirect=False,
+                        tclass=obj_classes_except_process,
+                    )
+                ),
                 "fread": markdown_code_from_results(
-                    self.terules_query_raw(target=attribute, tclass=file_dir_classes, perms=["read"],
-                                           target_indirect=False)),
+                    self.terules_query_raw(
+                        target=attribute,
+                        tclass=file_dir_classes,
+                        perms=["read"],
+                        target_indirect=False,
+                    )
+                ),
                 "fwrite": markdown_code_from_results(
-                    self.terules_query_raw(target=attribute, tclass=file_dir_classes, perms=["write", "append"],
-                                           target_indirect=False)),
+                    self.terules_query_raw(
+                        target=attribute,
+                        tclass=file_dir_classes,
+                        perms=["write", "append"],
+                        target_indirect=False,
+                    )
+                ),
             }
 
             pp_markdown(file_attribute_summary_template.format(**data))
@@ -699,19 +1005,44 @@ class Policy(se.SELinuxPolicy):
                 "attribute": attribute,
                 "types": markdown_list(self.types_in_attribute(attribute)),
                 "capabilities": markdown_code_from_results(
-                    self.terules_query_raw(source=attribute, tclass=["capability"], source_indirect=False)),
+                    self.terules_query_raw(
+                        source=attribute, tclass=["capability"], source_indirect=False
+                    )
+                ),
                 "fread": markdown_code_from_results(
-                    self.terules_query_raw(source=attribute, tclass=file_dir_classes, perms=["read"],
-                                           source_indirect=False)),
+                    self.terules_query_raw(
+                        source=attribute,
+                        tclass=file_dir_classes,
+                        perms=["read"],
+                        source_indirect=False,
+                    )
+                ),
                 "fwrite": markdown_code_from_results(
-                    self.terules_query_raw(source=attribute, tclass=file_dir_classes, perms=["write", "append"],
-                                           source_indirect=False)),
+                    self.terules_query_raw(
+                        source=attribute,
+                        tclass=file_dir_classes,
+                        perms=["write", "append"],
+                        source_indirect=False,
+                    )
+                ),
                 "packet": markdown_code_from_results(
-                    self.terules_query_raw(source=attribute, tclass=["packet"], source_indirect=False)),
+                    self.terules_query_raw(
+                        source=attribute, tclass=["packet"], source_indirect=False
+                    )
+                ),
                 "process": markdown_code_from_results(
-                    self.terules_query_raw(source=attribute, tclass=["process"], source_indirect=False)),
+                    self.terules_query_raw(
+                        source=attribute, tclass=["process"], source_indirect=False
+                    )
+                ),
                 "socket": markdown_code_from_results(
-                    self.terules_query_raw(source=attribute, tclass="socket", tclass_regex=True, source_indirect=False))
+                    self.terules_query_raw(
+                        source=attribute,
+                        tclass="socket",
+                        tclass_regex=True,
+                        source_indirect=False,
+                    )
+                ),
             }
 
             pp_markdown(domain_attribute_summary_template.format(**data))
@@ -734,7 +1065,9 @@ def markdown_code_from_results(results):
 ```
 %s
 ```
-        """ % "\n".join(as_str(results))
+        """ % "\n".join(
+        as_str(results)
+    )
     return out
 
 
@@ -808,27 +1141,69 @@ def domain_summary_raw(p, domain):
         "domain": domain,
         "attributes": markdown_list(p.attributes_for_type(domain)),
         "dta_in": markdown_list(
-            [x.source for x in p.terules_query_raw(target=domain, tclass=["process"], perms=["transition"])]),
+            [
+                x.source
+                for x in p.terules_query_raw(
+                    target=domain, tclass=["process"], perms=["transition"]
+                )
+            ]
+        ),
         "dta_out": markdown_list(
-            [x.target for x in p.terules_query_raw(source=domain, tclass=["process"], perms=["transition"])]),
+            [
+                x.target
+                for x in p.terules_query_raw(
+                    source=domain, tclass=["process"], perms=["transition"]
+                )
+            ]
+        ),
         "entrypoints": markdown_list(
-            [x.target for x in p.terules_query_raw(source=domain, tclass=["file"], perms=["entrypoint"])]),
+            [
+                x.target
+                for x in p.terules_query_raw(
+                    source=domain, tclass=["file"], perms=["entrypoint"]
+                )
+            ]
+        ),
         "other_trans": markdown_code_from_results(
-            p.transrules_query(source=domain, source_indirect=False, tclass=obj_classes_except_process)),
+            p.transrules_query(
+                source=domain, source_indirect=False, tclass=obj_classes_except_process
+            )
+        ),
         "roles": markdown_list(p.roles_for_type(domain)),
         "capabilities": markdown_code_from_results(
-            p.terules_query_raw(source=domain, tclass=["capability"], source_indirect=False)),
+            p.terules_query_raw(
+                source=domain, tclass=["capability"], source_indirect=False
+            )
+        ),
         "fread": markdown_code_from_results(
-            p.terules_query_raw(source=domain, tclass=file_dir_classes, perms=["read"], source_indirect=False)),
+            p.terules_query_raw(
+                source=domain,
+                tclass=file_dir_classes,
+                perms=["read"],
+                source_indirect=False,
+            )
+        ),
         "fwrite": markdown_code_from_results(
-            p.terules_query_raw(source=domain, tclass=file_dir_classes, perms=["write", "append"],
-                                source_indirect=False)),
+            p.terules_query_raw(
+                source=domain,
+                tclass=file_dir_classes,
+                perms=["write", "append"],
+                source_indirect=False,
+            )
+        ),
         "packet": markdown_code_from_results(
-            p.terules_query_raw(source=domain, tclass=["packet"], source_indirect=False)),
+            p.terules_query_raw(source=domain, tclass=["packet"], source_indirect=False)
+        ),
         "process": markdown_code_from_results(
-            p.terules_query_raw(source=domain, tclass=["process"], source_indirect=False)),
+            p.terules_query_raw(
+                source=domain, tclass=["process"], source_indirect=False
+            )
+        ),
         "socket": markdown_code_from_results(
-            p.terules_query_raw(source=domain, tclass="socket", tclass_regex=True, source_indirect=False))
+            p.terules_query_raw(
+                source=domain, tclass="socket", tclass_regex=True, source_indirect=False
+            )
+        ),
     }
 
     return domain_summary_template.format(**data)
@@ -890,7 +1265,6 @@ file_attribute_summary_template = """
 """
 
 
-
 file_summary_template = """
 ### File Type Summary: {file_type}
 
@@ -911,9 +1285,6 @@ file_summary_template = """
 {fwrite}
 
 """
-
-
-
 
 
 packet_summary_template = """
@@ -941,15 +1312,17 @@ packet_summary_template = """
 #
 #    pp(p.terules_query(source="smbd_t"))
 
+
 def str_repr(self):
     return str(self)
+
 
 # Now that setools moved many of these over to cython, the monkey patching won't work
 # for these types. Just leaving this here as a reminder to do somethign about this at
 # some point in the future.
-#se.policyrep.BaseType.__repr__ = str_repr
-#se.policyrep.BaseTERule.__repr__ = str_repr
-#se.policyrep.BaseRole.__repr__ = str_repr
+# se.policyrep.BaseType.__repr__ = str_repr
+# se.policyrep.BaseTERule.__repr__ = str_repr
+# se.policyrep.BaseRole.__repr__ = str_repr
 
 import subprocess
 from pygments import highlight
@@ -959,7 +1332,10 @@ from pygments.formatters import HtmlFormatter
 
 def diff_to_html(diff_text):
     html = HtmlFormatter()
-    return highlight(diff_text, DiffLexer(), html) + "<style>%s</style" % html.get_style_defs()
+    return (
+        highlight(diff_text, DiffLexer(), html)
+        + "<style>%s</style" % html.get_style_defs()
+    )
 
 
 # PolicySource makes it easier to grep through the sources inside the notebook to
@@ -973,16 +1349,22 @@ class RefPolicySource(object):
     def grep(self, search_str, file_type, path=None):
         if path is None:
             path = self.path
-        return subprocess.run(["grep", "-r", "-n", "--include",
-                               file_type, search_str, "."], cwd=path, stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT).stdout.decode('utf-8')
+        return subprocess.run(
+            ["grep", "-r", "-n", "--include", file_type, search_str, "."],
+            cwd=path,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        ).stdout.decode("utf-8")
 
     def diff(self, patha, pathb):
-        return subprocess.run(["diff", "-u", pathb, patha], cwd=self.path,
-                              stdout=subprocess.PIPE).stdout.decode('utf-8')
+        return subprocess.run(
+            ["diff", "-u", pathb, patha], cwd=self.path, stdout=subprocess.PIPE
+        ).stdout.decode("utf-8")
 
     def diff_relative(self, fname, other_source):
-        return diff_to_html(self.diff(self.abspath + fname, other_source.abspath + fname))
+        return diff_to_html(
+            self.diff(self.abspath + fname, other_source.abspath + fname)
+        )
 
     def find_def(self, name):
         return self.grep(name, "*.te", self.modules_path)
@@ -1020,7 +1402,7 @@ def load_refpolicy_source(path):
     return RefPolicySource(path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     p = load_policy("policy.30")
     p.build_index_if_needed()
 
