@@ -5,3 +5,4 @@ pygments
 pandoc
 setools>=4.0
 sh
+skin==0.0.7
