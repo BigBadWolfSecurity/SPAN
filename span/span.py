@@ -865,6 +865,25 @@ class Policy(se.SELinuxPolicy):
         ]
 
         return collect_types(self, raw, expand_attrs)
+    
+    def info_flow(self, src_type, tgt_type, excludes=None, min_weight=7):
+        map = se.permmap.PermissionMap()
+        f = se.infoflow.InfoFlowAnalysis(self, map, min_weight, excludes)
+        paths = f.all_shortest_paths(src_type, tgt_type)
+
+        flows = []
+        for path in paths:
+            flow = []
+            for step in path:
+                row = {
+                    "source": step.source,
+                    "target": step.target,
+                    "rules": sorted(step.rules)
+                }
+                flow.append(row)
+            flows.append(pd.DataFrame(flow))
+
+        return flows
 
     def policy_caps(self, **kwargs):
         return list(se.PolCapQuery(self, **kwargs).results())
@@ -904,7 +923,7 @@ class Policy(se.SELinuxPolicy):
             )
 
         df = pd.DataFrame(data)[["name", "attributes"]]
-        df.style.applymap(dataframe_hide_none)
+        df.style.map(dataframe_hide_none)
 
         return df
 
