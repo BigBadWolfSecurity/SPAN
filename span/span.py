@@ -319,6 +319,9 @@ class Delegator:
 
     def __getattr__(self, name: str):
         return getattr(self.child, name)
+    
+    def __repr__(self) -> str:
+        return self.name
 
 
 class Type(Delegator):
@@ -490,7 +493,7 @@ class Policy(se.SELinuxPolicy):
     def terules_query_simple(self, **kwargs):
         rules = self.terules_query_raw(**kwargs)
 
-        return self.terule_to_dataframe(rules)
+        return self.terules_to_dataframe(rules)
 
     def __ignore_types(self, ignore, rule):
         predicates = []
