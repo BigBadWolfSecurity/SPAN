@@ -16,15 +16,27 @@ official (and boring) [introduction](https://jupyter-notebook-beginner-guide.rea
 
 # Installation
 
-SPAN is pure Python and supports Python 3 only. You can install with:
+SPAN is typically tested on newer Fedora versions and on RHEL 9 and rebuilds such as Rocky Linux.
+
+SPAN is pure Python and supports Python 3 only.
+
+## SETools Requirement
+
+SPAN requires setools 4 along with the Python bindings. The easiest way to handle this is to install setools from the RPMs and then bring those into a virtual environment. You can do this as follows:
 
 ```
-$ pip3 install -r python_requirements.txt
-$ python3 setup.py install
+$ sudo dnf install setools
+$ python -m venv --system-site-packages venv
+$ source venv/bin/active
 ```
 
-The only tricky requirement can be SETools 4. See https://github.com/TresysTechnology/setools for more information
-on installing SETools.
+## Installing SPAN
+
+You can install SPAN with:
+
+```
+$ python -m pip install .
+```
 
 ## MacOS Support
 
@@ -42,7 +54,7 @@ cd libsepol
 sudo make DESTDIR=/usr/local PREFIX=/usr/local install
 ```
 
-Then following the instructions described above in the Installation section.
+After this, you should install setools 4. Then follow the instructions described above in the Installation section.
 
 # Getting Started
 
