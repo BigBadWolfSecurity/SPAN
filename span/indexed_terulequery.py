@@ -115,20 +115,19 @@ class CriteriaSetOrValueDescriptor(CriteriaDescriptor):
     # target type.
     def __set__(self, obj, value):
         if not value:
-            self.instances[obj] = None
+         setattr(obj, self.name, None)
         elif self.regex and getattr(obj, self.regex, False):
-            self.instances[obj] = re.compile(value)
+         setattr(obj, self.name, re.compile(value))
         elif self.lookup_function:
             lookup = getattr(obj.policy, self.lookup_function)
             if isinstance(value, self.value_types):
-                self.instances[obj] = lookup(value)
+             setattr(obj, self.name, lookup(value))
             else:
-                self.instances[obj] = set(lookup(v) for v in value)
+             setattr(obj, self.name, set(lookup(v) for v in value))
         elif self.enum_class:
-            self.instances[obj] = set(self.enum_class.lookup(v) for v in value)
+         setattr(obj, self.name, set(self.enum_class.lookup(v) for v in value))
         else:
-            self.instances[obj] = set(value)
-
+         setattr(obj, self.name, set(value))
 
 class TERuleQueryIndexed(mixins.MatchObjClass, mixins.MatchPermission, query.PolicyQuery):
 
