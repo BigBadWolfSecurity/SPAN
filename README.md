@@ -1,3 +1,4 @@
+
 # Introduction
 
 SPAN (SELinux Policy Analysis Notebook) is a small library designed to make using SETools 4 simple in a Jupyter notebook.
@@ -27,7 +28,7 @@ SPAN requires setools 4 along with the Python bindings. The easiest way to handl
 ```
 $ sudo dnf install setools
 $ python -m venv --system-site-packages venv
-$ source venv/bin/active
+$ source venv/bin/activate
 ```
 
 ## Installing SPAN
